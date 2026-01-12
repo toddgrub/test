@@ -3,202 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM LOCKDOWN</title>
+    <title>CRITICAL ALERT // SYSTEM LOCKDOWN</title>
     <style>
-        /* --- CORE STYLES --- */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --red: #ff0000;
-            --dark-red: #4a0000;
-            --bg: #050000;
-            --glass: rgba(10, 0, 0, 0.85);
+        /* --- RESET & BASE STYLES --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            /* DISABLE SELECTION EVERYWHERE */
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none;    /* Firefox */
+            -ms-user-select: none;     /* IE10+/Edge */
+            user-select: none;         /* Standard */
+            -webkit-user-drag: none;   /* Prevent image dragging */
         }
+
+        :root {
+            --primary-red: #ff0000;
+            --dark-red: #4a0000;
+            --black: #050000;
+            --glass: rgba(20, 0, 0, 0.75);
+        }
+
         body {
-            background-color: var(--bg);
+            background-color: var(--black);
             background-image: radial-gradient(circle at center, #2a0000 0%, #000000 100%);
-            color: var(--red);
+            color: var(--primary-red);
             font-family: 'Courier New', Courier, monospace;
             height: 100vh;
             width: 100vw;
-            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+            position: relative;
+            cursor: not-allowed; /* Adds to the 'locked' feel */
         }
 
-        /* --- FX LAYERS --- */
-        .scanlines {
-            position: fixed; inset: 0; pointer-events: none; z-index: 10;
-            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3) 50%);
-            background-size: 100% 4px;
+        /* --- BACKGROUND DETAILS --- */
+        .hazard-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 20px,
+                rgba(255, 0, 0, 0.05) 20px,
+                rgba(255, 0, 0, 0.05) 40px
+            );
+            pointer-events: none;
+            z-index: 1;
         }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0),
+                rgba(255, 255, 255, 0) 50%,
+                rgba(0, 0, 0, 0.2) 50%,
+                rgba(0, 0, 0, 0.2)
+            );
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
         .vignette {
-            position: fixed; inset: 0; pointer-events: none; z-index: 2;
-            background: radial-gradient(circle, transparent 40%, black 150%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 50%, black 150%);
+            z-index: 2;
+            pointer-events: none;
         }
 
         /* --- MAIN CONTAINER --- */
         .container {
-            position: relative; z-index: 5; text-align: center;
-            border: 2px solid var(--red); background: var(--glass);
-            padding: 3rem 4rem;
-            box-shadow: 0 0 40px var(--dark-red), inset 0 0 20px var(--dark-red);
-            backdrop-filter: blur(5px);
-            min-width: 600px;
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            border: 2px solid var(--primary-red);
+            background: var(--glass);
+            padding: 3rem 5rem;
+            box-shadow: 0 0 30px var(--dark-red), inset 0 0 20px var(--dark-red);
+            backdrop-filter: blur(8px);
+            max-width: 90%;
+            animation: float 6s ease-in-out infinite;
+            /* Ensure clicks on the container don't do anything */
+            pointer-events: none; 
         }
 
-        h1 { font-size: 3rem; text-transform: uppercase; margin-bottom: 0.5rem; text-shadow: 0 0 15px var(--red); }
-        .timer { font-size: 6rem; font-weight: bold; text-shadow: 0 0 20px var(--red); line-height: 1; margin: 20px 0; }
-        .sub-text { border-bottom: 1px solid var(--red); display: inline-block; padding-bottom: 5px; letter-spacing: 2px; }
+        /* Corners */
+        .corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--primary-red);
+            border-style: solid;
+        }
+        .tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; }
+        .tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; }
+        .bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; }
+        .br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; }
 
-        /* --- SETUP PANEL (Hidden by default) --- */
-        #setup-panel { display: none; }
-        .setup-input {
-            background: black; border: 1px solid var(--red); color: var(--red);
-            font-family: 'Courier New', monospace; font-size: 1.5rem;
-            padding: 10px; width: 100px; text-align: center; margin-right: 10px;
+        /* --- TYPOGRAPHY --- */
+        .icon-warning {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+            animation: pulse 1s infinite alternate;
         }
-        .btn {
-            background: var(--red); color: black; border: none;
-            font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold;
-            padding: 12px 24px; cursor: pointer; text-transform: uppercase;
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px var(--primary-red);
         }
-        .btn:hover { background: white; box-shadow: 0 0 15px white; }
-        
-        .generated-link-box {
-            margin-top: 20px; border: 1px dashed var(--red); padding: 15px;
-            word-break: break-all; font-size: 0.9rem; background: rgba(0,0,0,0.5);
-            display: none;
+
+        p.sub-text {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+            border-bottom: 1px solid var(--primary-red);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .timer-box {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--primary-red);
+            padding: 1rem 2rem;
+            margin-top: 1rem;
+            display: inline-block;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+        }
+
+        .timer {
+            font-size: 6rem;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 0 0 20px var(--primary-red);
+            letter-spacing: 5px;
+            line-height: 1;
+        }
+
+        .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 10px;
+            color: #ff4444;
+        }
+
+        .footer-id {
+            margin-top: 2rem;
+            font-size: 0.7rem;
+            opacity: 0.5;
         }
 
         /* --- ANIMATIONS --- */
-        @keyframes pulse { from { opacity: 1; } to { opacity: 0.7; text-shadow: 0 0 30px red; } }
-        .hazard-striped {
-            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,0,0,0.1) 10px, rgba(255,0,0,0.1) 20px);
-            position: absolute; inset: 0; z-index: -1;
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 1; text-shadow: 0 0 10px red; }
+            to { transform: scale(1.1); opacity: 0.8; text-shadow: 0 0 25px red; }
         }
-        
-        /* Panic Mode Style */
-        .critical { animation: pulse 0.2s infinite alternate; color: #fff; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); box-shadow: 0 0 30px var(--dark-red); }
+            50% { transform: translateY(-10px); box-shadow: 0 0 50px var(--dark-red); }
+            100% { transform: translateY(0px); box-shadow: 0 0 30px var(--dark-red); }
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.95; }
+            50% { opacity: 1.0; }
+            100% { opacity: 0.95; }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 2rem; width: 95%; }
+            h1 { font-size: 2rem; }
+            .timer { font-size: 3.5rem; }
+        }
     </style>
 </head>
 <body>
 
+    <div class="hazard-bg"></div>
     <div class="scanlines"></div>
     <div class="vignette"></div>
 
     <div class="container">
-        <div class="hazard-striped"></div>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <span class="icon-warning">⚠️</span>
         
-        <!-- COUNTDOWN MODE -->
-        <div id="timer-display">
-            <div style="font-size: 4rem;">⚠️</div>
-            <h1>System Purge</h1>
-            <p class="sub-text">TIME UNTIL TOTAL FAILURE</p>
-            
-            <div class="timer" id="countdown">00:00</div>
-            
-            <div style="font-size: 0.7rem; opacity: 0.6; margin-top:20px;">
-                SESSION ID: <span id="session-id">LOADING...</span>
-            </div>
+        <h1 id="status-title">System Breach</h1>
+        <p class="sub-text">CRITICAL FAILURE IMMINENT</p>
+
+        <div class="timer-box">
+            <div id="countdown" class="timer">--:--</div>
+            <div class="label">Time Remaining</div>
         </div>
 
-        <!-- SETUP MODE (Only visible if no time set) -->
-        <div id="setup-panel">
-            <h1>INITIALIZE TEST</h1>
-            <p style="margin-bottom: 20px;">ENTER DURATION (MINUTES)</p>
-            
-            <div style="margin-bottom: 20px;">
-                <input type="number" id="minutes-input" class="setup-input" value="10" min="1">
-                <button class="btn" onclick="generateLink()">GENERATE KIOSK LINK</button>
-            </div>
-
-            <div id="result-area" class="generated-link-box">
-                <p style="color:white; margin-bottom:5px;">COPY THIS URL INTO KIOSK SETTINGS:</p>
-                <a id="final-link" href="#" style="color: var(--red); text-decoration: none;">...</a>
-            </div>
-        </div>
+        <div class="footer-id">ERROR CODE: 0x559-CRITICAL // TERMINATION SEQUENCE STARTED</div>
     </div>
 
     <script>
-        // Check URL for "end" timestamp
-        const params = new URLSearchParams(window.location.search);
-        const endParam = params.get('end');
+        // --- LOCKDOWN INTERACTION SCRIPT ---
+        // Block Right Click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+        // Block Selection drag
+        document.onselectstart = function() { return false; }
+        
+        // Block Dragging of elements
+        document.ondragstart = function() { return false; }
 
-        const displayDiv = document.getElementById('timer-display');
-        const setupDiv = document.getElementById('setup-panel');
-        const countdownEl = document.getElementById('countdown');
 
-        // --- SCENARIO 1: SETUP MODE (No URL Param) ---
-        if (!endParam) {
-            displayDiv.style.display = 'none';
-            setupDiv.style.display = 'block';
-        } 
-        // --- SCENARIO 2: RUN MODE (URL Param Exists) ---
-        else {
-            setupDiv.style.display = 'none';
-            displayDiv.style.display = 'block';
-            document.getElementById('session-id').innerText = endParam.slice(-6);
-            startTimer(parseInt(endParam));
+        // --- CONFIGURATION ---
+        const STORAGE_KEY = 'security_lockdown_target_time';
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Check params
+        const shouldReset = urlParams.get('reset') === 'true';
+        const minutesParam = urlParams.get('m');
+        
+        // DEFAULT CHANGED TO 30 MINUTES
+        const defaultDurationMinutes = minutesParam ? parseFloat(minutesParam) : 30;
+        
+        let endTime;
+
+        // --- TIMER LOGIC ---
+        if (shouldReset || !localStorage.getItem(STORAGE_KEY)) {
+            const now = new Date().getTime();
+            const durationMs = defaultDurationMinutes * 60 * 1000;
+            endTime = now + durationMs;
+            
+            localStorage.setItem(STORAGE_KEY, endTime);
+            
+            if(shouldReset) {
+                // Clean URL gracefully
+                window.history.replaceState({}, document.title, window.location.pathname + (minutesParam ? `?m=${minutesParam}` : ''));
+            }
+        } else {
+            endTime = parseInt(localStorage.getItem(STORAGE_KEY));
         }
 
-        // --- FUNCTION: Generate the Kiosk Link ---
-        function generateLink() {
-            const mins = document.getElementById('minutes-input').value;
+        function updateTimer() {
             const now = new Date().getTime();
-            // Calculate target timestamp: Now + Minutes
-            const targetTime = now + (mins * 60 * 1000);
-            
-            // Create the new URL
-            const baseUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            const newUrl = `${baseUrl}?end=${targetTime}`;
+            const distance = endTime - now;
 
-            // Show it to the user
-            document.getElementById('result-area').style.display = 'block';
-            const linkEl = document.getElementById('final-link');
-            linkEl.innerText = newUrl;
-            linkEl.href = newUrl;
-            
-            // Optional: Automatically go there to test
-            // window.location.href = newUrl; 
-        }
+            if (distance < 0) {
+                document.getElementById("countdown").innerHTML = "00:00";
+                document.getElementById("countdown").style.color = "#ffffff";
+                document.getElementById("status-title").innerText = "SYSTEM PURGED";
+                document.body.style.background = "black";
+                clearInterval(interval);
+                return;
+            }
 
-        // --- FUNCTION: Run the Timer ---
-        function startTimer(endTime) {
-            const interval = setInterval(() => {
-                const now = new Date().getTime();
-                const distance = endTime - now;
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-                if (distance < 0) {
-                    clearInterval(interval);
-                    countdownEl.innerHTML = "00:00";
-                    countdownEl.classList.add("critical");
-                    document.querySelector("h1").innerText = "FAILURE";
-                    return;
-                }
+            const minStr = minutes < 10 ? "0" + minutes : minutes;
+            const secStr = seconds < 10 ? "0" + seconds : seconds;
 
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            document.getElementById("countdown").innerHTML = minStr + ":" + secStr;
 
-                const m = minutes < 10 ? "0" + minutes : minutes;
-                const s = seconds < 10 ? "0" + seconds : seconds;
-
-                countdownEl.innerHTML = `${m}:${s}`;
-
-                // Panic visual effects
-                if (minutes === 0) {
-                    document.body.style.background = distance % 1000 < 500 ? "#200000" : "black";
-                    countdownEl.style.textShadow = "0 0 40px red";
-                }
-
-            }, 1000);
-            
-            // Run once immediately
-            const now = new Date().getTime();
-            if(endTime - now < 0) {
-                 countdownEl.innerHTML = "00:00";
+            if (minutes === 0) {
+                document.getElementById("countdown").style.animation = "pulse 0.2s infinite alternate";
+                document.body.style.backgroundImage = "radial-gradient(circle at center, #600000 0%, #000000 100%)";
             }
         }
+
+        const interval = setInterval(updateTimer, 1000);
+        updateTimer();
     </script>
 </body>
 </html>
